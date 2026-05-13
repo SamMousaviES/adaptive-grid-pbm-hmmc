@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+title: "Adaptive HMMC for PBMs"
+version: "0.1.0"
+date-released: "2026-05-13"
+authors:
+  - family-names: "Mousavi"
+    given-names: "Mahdi"
+  - family-names: "Alopaeus"
+    given-names: "Ville"
+abstract: "MATLAB implementation of an adaptive-grid HMMC solver for constant-kernel coalescence population balance models."
+license: "MIT"
