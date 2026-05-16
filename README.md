@@ -1,103 +1,154 @@
-# Adaptive HMMC for PBMs
+# Adaptive HMMC for PBMs (Python)
 
-Adaptive HMMC for PBMs is a small MATLAB package for solving constant-kernel
-coalescence population balance models with a moment-conserving sectional grid.
-The package keeps the number of size classes fixed and can uniformly rescale
-the pivot grid when the active size range moves.
+`adaptivehmmc` is a Python package for solving moment-conserving sectional
+population balance equations with an optional uniform adaptive-grid
+rescaling. The number of size classes is fixed; the pivot grid is uniformly
+rescaled when the active size range moves, and the population is projected
+onto the rescaled pivots by local moment matching.
 
-This distribution is a cleaned core-solver package intended for reuse and
-publication. It does not include manuscript build files, exploratory figures,
-or temporary research scripts.
+Supported processes:
 
-## Requirements
-
-- MATLAB R2020b or newer
-- No required third-party toolboxes
+| process       | kernel                  | notes                                              |
+|---------------|-------------------------|----------------------------------------------------|
+| `coalescence` | `constant`              | constant-kernel coalescence; analytical reference  |
+| `breakage`    | `binary_equal_volume`   | two daughters at `d / 2^(1/3)`; scale-similar table |
+| `growth`      | `proportional`          | `G(d) = k_g d`; fixed-step projection solver       |
 
 ## Installation
 
-Clone or download the repository and add the package root to the MATLAB path:
-
-```matlab
-addpath("Git_dist")
+```bash
+pip install .
 ```
 
-If `Git_dist` is itself the repository root, add that folder:
+For development and to run the examples and tests:
 
-```matlab
-addpath(pwd)
+```bash
+pip install -e .[dev]
 ```
 
-## Quick Start
+Requirements: Python ≥ 3.9, NumPy ≥ 1.22, SciPy ≥ 1.9. Matplotlib is needed
+only for the example scripts; pytest only for the test suite.
 
-```matlab
-addpath("Git_dist")
+## Quick start
 
-options = adaptivehmmc.defaultOptions();
-options.timeSpan = [0, 1000];
-options.numClasses = 20;
-options.adaptive = true;
+```python
+import adaptivehmmc
 
-result = adaptivehmmc.solve(options);
+options = adaptivehmmc.default_options()
+options.time_span = (0.0, 1000.0)
+options.num_classes = 20
+options.adaptive = True
 
-fprintf("Final d43: %.4g\n", result.d43(end));
-fprintf("Adaptation events: %d\n", result.report.numAdaptations);
+result = adaptivehmmc.solve(options)
+
+print(f"Final d43: {result.d43[-1]:.4g}")
+print(f"Adaptations: {result.report.num_adaptations}")
 ```
 
-The primary output fields are:
+The result is a `SolveResult` dataclass with NumPy arrays:
 
-- `result.time`: time vector
-- `result.population`: class populations, one column per saved time
-- `result.pivots`: pivot locations, one column per saved time
-- `result.moments`: transported moments
-- `result.d43`: characteristic diameter `M4/M3`
-- `result.targetUpperPivot`: adaptive target `fMax*d43`
-- `result.adaptationTimes`: times where the grid was rescaled
-- `result.report`: summary diagnostics
+| attribute            | shape                | meaning                                   |
+|----------------------|----------------------|-------------------------------------------|
+| `time`               | `(T,)`               | time samples (every solver step)          |
+| `population`         | `(num_classes, T)`   | class populations                         |
+| `pivots`             | `(num_classes, T)`   | pivot diameters                           |
+| `moments`            | `(num_moments, T)`   | diameter moments `M_0 ... M_{num_moments-1}` |
+| `d43`                | `(T,)`               | volume-weighted mean diameter `M_4 / M_3` |
+| `target_upper_pivot` | `(T,)`               | adaptive target `f_max * d43`             |
+| `adaptation_times`   | `(num_events,)`      | times where the grid was rescaled         |
+| `report`             | `SolveReport`        | scalar diagnostics (CPU, step counts)     |
+| `options`            | `SolverOptions`      | validated options used for the run        |
 
-## Method Overview
+## Choosing a process
+
+```python
+options = adaptivehmmc.default_options()
+
+# Coalescence (default)
+options.process.type = "coalescence"
+options.process.kernel = "constant"
+options.process.rate = 1.0
+
+# Breakage
+options.process.type = "breakage"
+options.process.kernel = "binary_equal_volume"
+
+# Proportional growth
+options.process.type = "growth"
+options.process.kernel = "proportional"
+options.solver.num_steps = 500
+```
+
+For breakage and growth the manuscript uses a log-normal initial population
+on a custom geometric grid; the `examples/figure_breakage_benchmark.py` and
+`examples/figure_growth_benchmark.py` scripts show how to pass these in via
+`options.initial_distribution`.
+
+## Method overview
 
 The solver represents the number distribution on a finite set of diameter
-pivots. Coalescence products are mapped to nearby pivots by local moment
-matching. When adaptation is enabled, the largest pivot target is
+pivots. Coalescence products and breakage daughters are mapped to nearby
+pivots by local moment matching with an arbitrary preserved moment set
+(default `M_0 ... M_5`). When adaptation is enabled the largest pivot target is
 
-```text
-d_max_star = fMax * d43
+```
+d_max_star = f_max * d43
 ```
 
-and the grid is uniformly rescaled when this target leaves the admissible band
-defined by `fMult`. After each scaling event, the existing population is
-projected onto the new pivots using the same local moment-matching idea.
+and the grid is uniformly rescaled when this target leaves the admissible
+band defined by `f_mult`. After each scaling event the existing population
+is projected onto the new pivots using the same local moment-matching idea.
+Uniform scaling is used deliberately: it preserves the relative pivot
+layout, so the precomputed redistribution tables stay valid across
+adaptation events.
 
-Uniform grid scaling is used deliberately: it preserves the relative pivot
-layout and is compatible with reusable redistribution logic.
+## Reproducing the manuscript figures
 
-## Examples
+Each manuscript figure has a dedicated example script in `examples/`.
+Outputs are written to `figures_out/` (PDFs and PNGs) and
+`figures_out/tables/` (LaTeX tables).
 
-Run from MATLAB:
+| Manuscript artifact                                       | Script                                       |
+|-----------------------------------------------------------|----------------------------------------------|
+| Fig. `bad_grid_example`                                   | `examples/figure_bad_grid_example.py`        |
+| Fig. `redistribution_example`                             | `examples/figure_redistribution_example.py`  |
+| Figs. `wall_error_time`, `wall_distribution_snapshots`    | `examples/figure_wall_error.py`              |
+| Figs. `breakage_moment_validation`, `breakage_grid_error` | `examples/figure_breakage_benchmark.py`      |
+| Fig. `growth_moment_validation`                           | `examples/figure_growth_benchmark.py`        |
+| Fig. + Table `benchmark_tradeoff`                         | `examples/figure_benchmark_tradeoff.py`      |
+| Table `category_comparison`                               | `examples/table_category_comparison.py`      |
 
-```matlab
-run("examples/run_quickstart.m")
-run("examples/compare_fixed_adaptive.m")
-run("examples/custom_initial_distribution.m")
+To regenerate everything:
+
+```bash
+cd examples
+python figure_bad_grid_example.py
+python figure_redistribution_example.py
+python figure_wall_error.py
+python figure_breakage_benchmark.py
+python figure_growth_benchmark.py
+python figure_benchmark_tradeoff.py
+python table_category_comparison.py
 ```
+
+The example scripts import `adaptivehmmc` from the installed package; the
+small helper `_paths.py` simply locates the `figures_out/` output directory.
 
 ## Tests
 
-Run the test suite from the package root:
-
-```matlab
-runtests("tests")
+```bash
+pytest
 ```
 
-The tests check package loading, example execution, volume conservation,
-adaptive-grid improvement over a narrow fixed grid, moment preservation during
-redistribution, invalid-option handling, and no-plot solver execution.
+The suite checks package loading, volume-moment conservation, that the
+adaptive grid beats a narrow fixed grid, moment preservation across
+redistribution events, invalid-option handling, and end-to-end accuracy of
+the breakage and growth benchmarks.
 
 ## Citation
 
-If you use this package in academic work, cite the accompanying publication or
-use the metadata in `CITATION.cff`.
+If you use this package in academic work, please cite the accompanying
+publication or use the metadata in `CITATION.cff`.
 
 ## License
 

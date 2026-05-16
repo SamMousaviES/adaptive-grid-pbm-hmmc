@@ -1,12 +1,21 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it using the metadata below."
 title: "Adaptive HMMC for PBMs"
-version: "0.1.0"
-date-released: "2026-05-13"
+version: "0.2.0"
+date-released: "2026-05-16"
 authors:
   - family-names: "Mousavi"
     given-names: "Mahdi"
+    orcid: "https://orcid.org/0000-0002-1171-6034"
   - family-names: "Alopaeus"
     given-names: "Ville"
-abstract: "MATLAB implementation of an adaptive-grid HMMC solver for constant-kernel coalescence population balance models."
+    orcid: "https://orcid.org/0000-0001-9773-0998"
+abstract: "Python implementation of an adaptive-grid moment-conserving HMMC solver for population balance equations with coalescence, breakage, and proportional growth."
 license: "MIT"
+keywords:
+  - population balance
+  - adaptive grid
+  - HMMC
+  - coalescence
+  - breakage
+  - growth

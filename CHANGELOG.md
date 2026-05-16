@@ -1,8 +1,20 @@
 # Changelog
 
+## 0.2.0
+
+- Rewritten as a pip-installable Python package built on NumPy and SciPy.
+- Dataclass-based options API (`SolverOptions`, `ProcessOptions`, etc.).
+- `adaptivehmmc.solve` dispatches on `process.type`:
+  - `coalescence` / `constant`
+  - `breakage` / `binary_equal_volume`
+  - `growth` / `proportional`
+- Adaptive-grid rescaling driven by a SciPy `solve_ivp` event for the
+  ODE-based processes and by a fixed-step projection loop for growth.
+- Example scripts reproducing every manuscript figure and table.
+- pytest test suite covering volume conservation, breakage and growth
+  benchmark accuracy, and adaptive-grid improvements.
+
 ## 0.1.0 - 2026-05-13
 
-- Initial cleaned distribution package.
-- Added `adaptivehmmc.defaultOptions`.
-- Added `adaptivehmmc.solve`.
-- Added examples, unit tests, citation metadata, and MIT license.
+- Initial MATLAB distribution (`+adaptivehmmc`) with constant-kernel
+  coalescence and adaptive uniform grid scaling.

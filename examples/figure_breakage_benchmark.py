@@ -1,0 +1,160 @@
+"""Reproduce manuscript Figures breakage_moment_validation and breakage_grid_error.
+
+Binary equal-volume breakage with constant breakage frequency: the moments
+satisfy ``M_q(tau)/M_q(0) = exp((2^(1-q/3)-1) tau)``. The case is chosen so
+that d43 decreases enough to trigger downward uniform grid scaling, while the
+breakage table remains reusable thanks to the scale-similar daughter law.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+import adaptivehmmc
+from _paths import output_dir
+
+
+def geometric_grid(num_classes, diameter_min, diameter_max, grid_ratio):
+    weights = grid_ratio ** np.arange(num_classes)
+    widths = weights / weights.sum() * (diameter_max - diameter_min)
+    edges = diameter_min + np.concatenate(([0.0], np.cumsum(widths)))
+    pivots = 0.5 * (edges[:-1] + edges[1:])
+    return pivots, widths
+
+
+def lognormal_on_grid(pivots, widths, center, sigma):
+    """Initial log-normal population, normalized so M_3 = 1."""
+    raw = np.exp(-0.5 * (np.log(pivots / center) / sigma) ** 2) / pivots
+    raw *= widths
+    raw /= raw.sum()
+    third_moment = np.sum(raw * pivots ** 3)
+    return raw / third_moment
+
+
+def analytical_moments(initial_moments, orders, tau):
+    return initial_moments * np.exp((2.0 ** (1.0 - orders / 3.0) - 1.0) * tau)
+
+
+def main() -> None:
+    num_classes = 21
+    num_moments = 6
+    grid_ratio = 1.2
+    diameter_min = 0.0
+    diameter_max = 100.0
+    final_tau = 50.0
+    rate = 1.0
+    f_max = 1.45
+    f_mult = 1.25
+    lognorm_center = 85.0
+    lognorm_sigma = 0.5
+
+    pivots, widths = geometric_grid(num_classes, diameter_min, diameter_max, grid_ratio)
+    initial_population = lognormal_on_grid(pivots, widths, lognorm_center, lognorm_sigma)
+
+    base = adaptivehmmc.default_options()
+    base.time_span = (0.0, final_tau / rate)
+    base.num_classes = num_classes
+    base.num_moments = num_moments
+    base.diameter_min = diameter_min
+    base.diameter_max = diameter_max
+    base.grid_ratio = grid_ratio
+    base.f_max = f_max
+    base.f_mult = f_mult
+    base.process.type = "breakage"
+    base.process.kernel = "binary_equal_volume"
+    base.process.rate = rate
+    base.initial_distribution.type = "custom"
+    base.initial_distribution.pivots = pivots
+    base.initial_distribution.population = initial_population
+    base.solver.rel_tol = 1.0e-8
+    base.solver.abs_tol = 1.0e-10
+
+    print("Running fixed-grid breakage ...")
+    fixed_opts = base.copy()
+    fixed_opts.adaptive = False
+    fixed = adaptivehmmc.solve(fixed_opts)
+
+    print("Running adaptive-grid breakage ...")
+    adaptive_opts = base.copy()
+    adaptive_opts.adaptive = True
+    adaptive = adaptivehmmc.solve(adaptive_opts)
+
+    initial_moments = fixed.moments[:, 0]
+    orders = np.arange(num_moments)
+    analytical_final = analytical_moments(initial_moments, orders, final_tau)
+
+    fixed_err = 100.0 * np.max(np.abs((fixed.moments[:, -1] - analytical_final) / analytical_final))
+    adaptive_err = 100.0 * np.max(np.abs((adaptive.moments[:, -1] - analytical_final) / analytical_final))
+    print(f"Fixed-grid max moment error:    {fixed_err:.3e} %")
+    print(f"Adaptive-grid max moment error: {adaptive_err:.3e} %")
+    print(f"Adaptation events: {adaptive.report.num_adaptations}")
+
+    tau_reference = np.linspace(0.0, final_tau, 240)
+    reference = np.column_stack([
+        analytical_moments(initial_moments, orders, tau) for tau in tau_reference
+    ])
+
+    fig1, ax = plt.subplots(figsize=(7.5, 4.6))
+    colors = plt.get_cmap("tab10")
+    marker_idx = np.unique(np.round(np.linspace(0, adaptive.time.size - 1, 34)).astype(int))
+
+    for i in range(num_moments):
+        ax.semilogy(tau_reference, reference[i, :] / initial_moments[i],
+                    "-", color=colors(i), lw=1.4, label=f"$M_{i}$")
+        ax.semilogy(fixed.time * rate, fixed.moments[i, :] / initial_moments[i],
+                    "--", color=colors(i), lw=1.0)
+        ax.semilogy(adaptive.time[marker_idx] * rate,
+                    adaptive.moments[i, marker_idx] / initial_moments[i],
+                    "o", color=colors(i), markerfacecolor="white",
+                    markersize=3.2, lw=0.8)
+
+    ax.set_xlabel(r"Dimensionless time, $\tau = g_b t$")
+    ax.set_ylabel(r"Normalized moment, $M_q / M_q(0)$")
+    ax.grid(True, which="major", ls=":", alpha=0.6)
+    leg1 = ax.legend(loc="upper left", ncol=3, fontsize=8, title="moment")
+
+    # Style legend (analytical/fixed/adaptive)
+    style_handles = [
+        plt.Line2D([], [], color="k", ls="-", lw=1.4, label="Analytical"),
+        plt.Line2D([], [], color="k", ls="--", lw=1.0, label="Fixed grid"),
+        plt.Line2D([], [], color="k", marker="o", ls="None",
+                   markerfacecolor="white", markersize=4, label="Adaptive grid"),
+    ]
+    ax.add_artist(leg1)
+    ax.legend(handles=style_handles, loc="lower right", fontsize=8)
+
+    out = output_dir()
+    fig1.tight_layout()
+    fig1.savefig(out / "breakage_moment_validation.pdf", bbox_inches="tight")
+    fig1.savefig(out / "breakage_moment_validation.png", dpi=300, bbox_inches="tight")
+    plt.close(fig1)
+
+    fig2, ax2 = plt.subplots(figsize=(7.5, 3.4))
+    ax2.plot(fixed.time * rate, fixed.d43, "--", color="0.25", lw=1.1,
+             label=r"fixed $d_{43}$")
+    ax2.plot(adaptive.time * rate, adaptive.d43, "-", color="black", lw=1.4,
+             label=r"adaptive $d_{43}$")
+    ax2.step(adaptive.time * rate, adaptive.pivots[-1, :], where="post",
+             color="#1f6cbf", lw=1.5, label=r"adaptive $d_N$")
+    ax2.plot(adaptive.time * rate, adaptive.target_upper_pivot, ":",
+             color="#007358", lw=1.4, label=r"$f_{\max} d_{43}$")
+    ax2.axhline(fixed.pivots[-1, 0], ls="-.", color="0.55", lw=1.0,
+                label=r"fixed $d_N$")
+    for t_event in adaptive.adaptation_times:
+        ax2.axvline(t_event * rate, ls=":", color="0.65", lw=0.8)
+    ax2.set_xlabel(r"Dimensionless time, $\tau = g_b t$")
+    ax2.set_ylabel("Diameter")
+    ax2.grid(True, ls=":", alpha=0.6)
+    ax2.legend(loc="upper right", ncol=2, fontsize=8)
+
+    fig2.tight_layout()
+    fig2.savefig(out / "breakage_grid_error.pdf", bbox_inches="tight")
+    fig2.savefig(out / "breakage_grid_error.png", dpi=300, bbox_inches="tight")
+    plt.close(fig2)
+
+    print(f"Saved breakage_moment_validation and breakage_grid_error to {out}")
+
+
+if __name__ == "__main__":
+    main()
