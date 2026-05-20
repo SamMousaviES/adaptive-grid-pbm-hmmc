@@ -1,9 +1,9 @@
-"""Reproduce manuscript Figures breakage_moment_validation and breakage_grid_error.
+"""Reproduce manuscript Figure breakage_moment_validation.
 
 Binary equal-volume breakage with constant breakage frequency: the moments
-satisfy ``M_q(tau)/M_q(0) = exp((2^(1-q/3)-1) tau)``. The case is chosen so
-that d43 decreases enough to trigger downward uniform grid scaling, while the
-breakage table remains reusable thanks to the scale-similar daughter law.
+satisfy ``M_q(t)/M_q(0) = exp(g_b * (2^(1-q/3)-1) * t)``. The case is chosen
+so that d43 decreases enough to trigger downward uniform grid scaling, while
+the breakage table remains reusable thanks to the scale-similar daughter law.
 """
 
 from __future__ import annotations
@@ -36,15 +36,32 @@ def analytical_moments(initial_moments, orders, tau):
     return initial_moments * np.exp((2.0 ** (1.0 - orders / 3.0) - 1.0) * tau)
 
 
+def moment_history(result, num_moments):
+    orders = np.arange(num_moments)
+    population = result.population
+    moments = np.zeros((num_moments, result.time.size))
+    for i in range(result.time.size):
+        pivots = result.pivots[:, i]
+        moments[:, i] = (
+            population[:, i, None] * pivots[:, None] ** orders[None, :]
+        ).sum(axis=0)
+    return moments
+
+
+def d43_from_history(moments):
+    return moments[4, :] / moments[3, :]
+
+
 def main() -> None:
     num_classes = 21
     num_moments = 6
-    grid_ratio = 1.2
+    grid_ratio = 1
     diameter_min = 0.0
     diameter_max = 100.0
-    final_tau = 50.0
-    rate = 1.0
-    f_max = 1.45
+    simulation_time = 10  # s
+    rate = 3.7
+    final_tau = rate * simulation_time
+    f_max = 1.3
     f_mult = 1.25
     lognorm_center = 85.0
     lognorm_sigma = 0.5
@@ -53,7 +70,7 @@ def main() -> None:
     initial_population = lognormal_on_grid(pivots, widths, lognorm_center, lognorm_sigma)
 
     base = adaptivehmmc.default_options()
-    base.time_span = (0.0, final_tau / rate)
+    base.time_span = (0.0, simulation_time)
     base.num_classes = num_classes
     base.num_moments = num_moments
     base.diameter_min = diameter_min
@@ -84,76 +101,79 @@ def main() -> None:
     orders = np.arange(num_moments)
     analytical_final = analytical_moments(initial_moments, orders, final_tau)
 
-    fixed_err = 100.0 * np.max(np.abs((fixed.moments[:, -1] - analytical_final) / analytical_final))
-    adaptive_err = 100.0 * np.max(np.abs((adaptive.moments[:, -1] - analytical_final) / analytical_final))
+    fixed_moments = moment_history(fixed, num_moments)
+    adaptive_moments = moment_history(adaptive, num_moments)
+    fixed_d43 = d43_from_history(fixed_moments)
+    adaptive_d43 = d43_from_history(adaptive_moments)
+
+    fixed_err = 100.0 * np.max(np.abs((fixed_moments[:, -1] - analytical_final) / analytical_final))
+    adaptive_err = 100.0 * np.max(np.abs((adaptive_moments[:, -1] - analytical_final) / analytical_final))
     print(f"Fixed-grid max moment error:    {fixed_err:.3e} %")
     print(f"Adaptive-grid max moment error: {adaptive_err:.3e} %")
     print(f"Adaptation events: {adaptive.report.num_adaptations}")
 
-    tau_reference = np.linspace(0.0, final_tau, 240)
+    time_reference = np.linspace(0.0, simulation_time, 240)
+    tau_reference = rate * time_reference
     reference = np.column_stack([
         analytical_moments(initial_moments, orders, tau) for tau in tau_reference
     ])
 
-    fig1, ax = plt.subplots(figsize=(7.5, 4.6))
+    reference_d43 = reference[4, :] / reference[3, :]
+
+    fig, (ax_mom, ax_grid) = plt.subplots(2, 1, figsize=(5.0, 5.8))
     colors = plt.get_cmap("tab10")
-    marker_idx = np.unique(np.round(np.linspace(0, adaptive.time.size - 1, 34)).astype(int))
+    marker_idx = np.unique(np.round(np.linspace(0, adaptive.time.size - 1, 30)).astype(int))
 
     for i in range(num_moments):
-        ax.semilogy(tau_reference, reference[i, :] / initial_moments[i],
-                    "-", color=colors(i), lw=1.4, label=f"$M_{i}$")
-        ax.semilogy(fixed.time * rate, fixed.moments[i, :] / initial_moments[i],
-                    "--", color=colors(i), lw=1.0)
-        ax.semilogy(adaptive.time[marker_idx] * rate,
-                    adaptive.moments[i, marker_idx] / initial_moments[i],
-                    "o", color=colors(i), markerfacecolor="white",
-                    markersize=3.2, lw=0.8)
+        ax_mom.semilogy(time_reference, reference[i, :] / initial_moments[i],
+                        "-", color=colors(i), lw=1.2, label=f"$M_{i}$")
+        ax_mom.semilogy(fixed.time, fixed_moments[i, :] / initial_moments[i],
+                        "--", color=colors(i), lw=0.9)
+        ax_mom.semilogy(adaptive.time[marker_idx],
+                        adaptive_moments[i, marker_idx] / initial_moments[i],
+                        "o", color=colors(i), markerfacecolor="white",
+                        markersize=2.8, lw=0.7)
 
-    ax.set_xlabel(r"Dimensionless time, $\tau = g_b t$")
-    ax.set_ylabel(r"Normalized moment, $M_q / M_q(0)$")
-    ax.grid(True, which="major", ls=":", alpha=0.6)
-    leg1 = ax.legend(loc="upper left", ncol=3, fontsize=8, title="moment")
+    ax_mom.set_xlabel("Time (s)")
+    ax_mom.set_ylabel(r"$M_q / M_q(0)$")
+    ax_mom.grid(True, which="major", ls=":", alpha=0.6)
+    leg1 = ax_mom.legend(loc="upper left", ncol=3, fontsize=7, title="moment")
 
     # Style legend (analytical/fixed/adaptive)
     style_handles = [
-        plt.Line2D([], [], color="k", ls="-", lw=1.4, label="Analytical"),
-        plt.Line2D([], [], color="k", ls="--", lw=1.0, label="Fixed grid"),
+        plt.Line2D([], [], color="k", ls="-", lw=1.2, label="Analytical"),
+        plt.Line2D([], [], color="k", ls="--", lw=0.9, label="Fixed grid"),
         plt.Line2D([], [], color="k", marker="o", ls="None",
                    markerfacecolor="white", markersize=4, label="Adaptive grid"),
     ]
-    ax.add_artist(leg1)
-    ax.legend(handles=style_handles, loc="lower right", fontsize=8)
+    ax_mom.add_artist(leg1)
+    ax_mom.legend(handles=style_handles, loc="lower left", fontsize=7)
+
+    ax_grid.plot(time_reference, reference_d43, "-", color="black", lw=1.2,
+                 label=r"analytical $d_{43}$")
+    ax_grid.plot(fixed.time, fixed_d43, "--", color="#8c1f1f", lw=1.0,
+                 label=r"fixed $d_{43}$")
+    ax_grid.plot(adaptive.time, adaptive_d43, "-", color="#1a619c", lw=1.1,
+                 label=r"adaptive $d_{43}$")
+    ax_grid.step(adaptive.time, adaptive.pivots[-1, :], where="post",
+                 color="#007358", lw=1.1, label=r"adaptive $d_N$")
+    ax_grid.axhline(fixed.pivots[-1, 0], ls="-.", color="0.55", lw=0.9,
+                    label=r"fixed $d_N$")
+    for t_event in adaptive.adaptation_times:
+        ax_grid.axvline(t_event, ls=":", color="0.70", lw=0.6)
+    ax_grid.set_xlabel("Time (s)")
+    ax_grid.set_ylabel(r"Diameter, $d$ (mm)")
+    ax_grid.set_yscale("log")
+    ax_grid.grid(True, ls=":", alpha=0.6)
+    ax_grid.legend(loc="upper right", fontsize=7)
 
     out = output_dir()
-    fig1.tight_layout()
-    fig1.savefig(out / "breakage_moment_validation.pdf", bbox_inches="tight")
-    fig1.savefig(out / "breakage_moment_validation.png", dpi=300, bbox_inches="tight")
-    plt.close(fig1)
+    fig.tight_layout()
+    fig.savefig(out / "breakage_moment_validation.pdf", bbox_inches="tight")
+    fig.savefig(out / "breakage_moment_validation.png", dpi=300, bbox_inches="tight")
+    plt.close(fig)
 
-    fig2, ax2 = plt.subplots(figsize=(7.5, 3.4))
-    ax2.plot(fixed.time * rate, fixed.d43, "--", color="0.25", lw=1.1,
-             label=r"fixed $d_{43}$")
-    ax2.plot(adaptive.time * rate, adaptive.d43, "-", color="black", lw=1.4,
-             label=r"adaptive $d_{43}$")
-    ax2.step(adaptive.time * rate, adaptive.pivots[-1, :], where="post",
-             color="#1f6cbf", lw=1.5, label=r"adaptive $d_N$")
-    ax2.plot(adaptive.time * rate, adaptive.target_upper_pivot, ":",
-             color="#007358", lw=1.4, label=r"$f_{\max} d_{43}$")
-    ax2.axhline(fixed.pivots[-1, 0], ls="-.", color="0.55", lw=1.0,
-                label=r"fixed $d_N$")
-    for t_event in adaptive.adaptation_times:
-        ax2.axvline(t_event * rate, ls=":", color="0.65", lw=0.8)
-    ax2.set_xlabel(r"Dimensionless time, $\tau = g_b t$")
-    ax2.set_ylabel("Diameter")
-    ax2.grid(True, ls=":", alpha=0.6)
-    ax2.legend(loc="upper right", ncol=2, fontsize=8)
-
-    fig2.tight_layout()
-    fig2.savefig(out / "breakage_grid_error.pdf", bbox_inches="tight")
-    fig2.savefig(out / "breakage_grid_error.png", dpi=300, bbox_inches="tight")
-    plt.close(fig2)
-
-    print(f"Saved breakage_moment_validation and breakage_grid_error to {out}")
+    print(f"Saved breakage_moment_validation to {out}")
 
 
 if __name__ == "__main__":

@@ -26,7 +26,7 @@ For development and to run the examples and tests:
 pip install -e .[dev]
 ```
 
-Requirements: Python ≥ 3.9, NumPy ≥ 1.22, SciPy ≥ 1.9. Matplotlib is needed
+Requirements: Python >= 3.9, NumPy >= 1.22, SciPy >= 1.9. Matplotlib is needed
 only for the example scripts; pytest only for the test suite.
 
 ## Quick start
@@ -79,10 +79,12 @@ options.process.kernel = "proportional"
 options.solver.num_steps = 500
 ```
 
-For breakage and growth the manuscript uses a log-normal initial population
-on a custom geometric grid; the `examples/figure_breakage_benchmark.py` and
-`examples/figure_growth_benchmark.py` scripts show how to pass these in via
-`options.initial_distribution`.
+For breakage the manuscript uses a log-normal initial population on a custom
+geometric grid; `examples/figure_breakage_benchmark.py` shows how to pass this
+through `options.initial_distribution`. The McCabe delta-L growth benchmark in
+`examples/figure_growth_benchmark.py` is implemented as a standalone
+manuscript example because this translated-characteristic case is not part of
+the public `adaptivehmmc.solve` API.
 
 ## Method overview
 
@@ -102,9 +104,9 @@ Uniform scaling is used deliberately: it preserves the relative pivot
 layout, so the precomputed redistribution tables stay valid across
 adaptation events.
 
-## Reproducing the manuscript figures
+## Reproducing the manuscript figures and tables
 
-Each manuscript figure has a dedicated example script in `examples/`.
+Each manuscript artifact has a dedicated example script in `examples/`.
 Outputs are written to `figures_out/` (PDFs and PNGs) and
 `figures_out/tables/` (LaTeX tables).
 
@@ -112,27 +114,22 @@ Outputs are written to `figures_out/` (PDFs and PNGs) and
 |-----------------------------------------------------------|----------------------------------------------|
 | Fig. `bad_grid_example`                                   | `examples/figure_bad_grid_example.py`        |
 | Fig. `redistribution_example`                             | `examples/figure_redistribution_example.py`  |
-| Figs. `wall_error_time`, `wall_distribution_snapshots`    | `examples/figure_wall_error.py`              |
-| Figs. `breakage_moment_validation`, `breakage_grid_error` | `examples/figure_breakage_benchmark.py`      |
+| Fig. `coalescence_benchmark`                              | `examples/figure_coalescence_benchmark.py`   |
+| Fig. `breakage_moment_validation`                         | `examples/figure_breakage_benchmark.py`      |
 | Fig. `growth_moment_validation`                           | `examples/figure_growth_benchmark.py`        |
 | Fig. + Table `benchmark_tradeoff`                         | `examples/figure_benchmark_tradeoff.py`      |
 | Table `category_comparison`                               | `examples/table_category_comparison.py`      |
 
-To regenerate everything:
+To regenerate every manuscript artifact:
 
 ```bash
-cd examples
-python figure_bad_grid_example.py
-python figure_redistribution_example.py
-python figure_wall_error.py
-python figure_breakage_benchmark.py
-python figure_growth_benchmark.py
-python figure_benchmark_tradeoff.py
-python table_category_comparison.py
+python examples/reproduce_manuscript.py
 ```
 
-The example scripts import `adaptivehmmc` from the installed package; the
-small helper `_paths.py` simply locates the `figures_out/` output directory.
+The runner adds the local `src/` directory to `PYTHONPATH`, so it works from a
+fresh checkout before installation. Individual example scripts can also be run
+directly after `pip install -e .[dev]`. The small helper `_paths.py` simply
+locates the `figures_out/` output directory.
 
 ## Tests
 

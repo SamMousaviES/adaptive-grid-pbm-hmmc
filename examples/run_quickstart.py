@@ -24,7 +24,7 @@ def main() -> None:
     ax.plot(result.time, result.pivots[-1, :], "k--", lw=1.2,
             label="largest pivot")
     ax.set_xlabel("Time")
-    ax.set_ylabel("Diameter")
+    ax.set_ylabel(r"Diameter, $d$ [arb. units]")
     ax.set_title("Adaptive HMMC quickstart")
     ax.grid(True, ls=":", alpha=0.6)
     ax.legend(loc="upper left")
