@@ -1,6 +1,8 @@
-"""Reproduce manuscript Figure: growth_moment_validation.
+"""Test McCabe delta-L growth with the current adaptive-grid machinery.
 
-This manuscript example uses a size-independent growth law,
+This manuscript example is intentionally kept outside the public
+``adaptivehmmc.solve`` API. It checks whether the existing ingredients used in
+the manuscript examples are enough for a size-independent growth law,
 
     G(d) = G0,
 
@@ -232,10 +234,10 @@ def main() -> None:
     num_moments = 6
     grid_ratio = 1
     diameter_min = 0.0
-    diameter_max = 3.0
-    final_time = 10.0
+    diameter_max = 2.0
+    final_time = 5.0
     num_steps = 100
-    growth_rate = 0.5
+    growth_rate = 1.0
     f_max = 2
     f_mult = 1.1
     lognorm_center = 0.45
@@ -287,8 +289,13 @@ def main() -> None:
     adaptive_err = 100.0 * np.max(
         np.abs((adaptive.moments[:, -1] - final_reference) / final_reference)
     )
+    fixed_min_population = float(np.min(fixed.population))
+    adaptive_min_population = float(np.min(adaptive.population))
+
     print(f"Fixed-grid max moment error:    {fixed_err:.3e} %")
     print(f"Adaptive-grid max moment error: {adaptive_err:.3e} %")
+    print(f"Fixed-grid minimum population:    {fixed_min_population:.3e}")
+    print(f"Adaptive-grid minimum population: {adaptive_min_population:.3e}")
     print(f"Adaptation events: {adaptive.adaptation_times.size}")
 
     time_reference = np.linspace(0.0, final_time, 240)
@@ -393,7 +400,7 @@ def main() -> None:
     )
     plt.close(fig)
 
-    print(f"Saved growth_moment_validation to {out}")
+    print(f"Saved growth_mccabe_benchmarkV01_nonnegative to {out}")
 
 
 if __name__ == "__main__":

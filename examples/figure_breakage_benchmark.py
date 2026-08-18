@@ -36,8 +36,9 @@ def analytical_moments(initial_moments, orders, tau):
     return initial_moments * np.exp((2.0 ** (1.0 - orders / 3.0) - 1.0) * tau)
 
 
-def moment_history(result, num_moments):
+def nonnegative_moment_history(result, num_moments):
     orders = np.arange(num_moments)
+    #population = np.maximum(result.population, 0.0)
     population = result.population
     moments = np.zeros((num_moments, result.time.size))
     for i in range(result.time.size):
@@ -101,8 +102,8 @@ def main() -> None:
     orders = np.arange(num_moments)
     analytical_final = analytical_moments(initial_moments, orders, final_tau)
 
-    fixed_moments = moment_history(fixed, num_moments)
-    adaptive_moments = moment_history(adaptive, num_moments)
+    fixed_moments = nonnegative_moment_history(fixed, num_moments)
+    adaptive_moments = nonnegative_moment_history(adaptive, num_moments)
     fixed_d43 = d43_from_history(fixed_moments)
     adaptive_d43 = d43_from_history(adaptive_moments)
 
@@ -157,6 +158,8 @@ def main() -> None:
                  label=r"adaptive $d_{43}$")
     ax_grid.step(adaptive.time, adaptive.pivots[-1, :], where="post",
                  color="#007358", lw=1.1, label=r"adaptive $d_N$")
+    #ax_grid.plot(adaptive.time, f_max * adaptive_d43, ":",
+    #             color="#007358", lw=1.2, label=r"$f_{\max} d_{43}$")
     ax_grid.axhline(fixed.pivots[-1, 0], ls="-.", color="0.55", lw=0.9,
                     label=r"fixed $d_N$")
     for t_event in adaptive.adaptation_times:

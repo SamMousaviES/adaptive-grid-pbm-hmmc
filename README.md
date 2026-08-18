@@ -115,7 +115,7 @@ Outputs are written to `figures_out/` (PDFs and PNGs) and
 | Fig. `bad_grid_example`                                   | `examples/figure_bad_grid_example.py`        |
 | Fig. `redistribution_example`                             | `examples/figure_redistribution_example.py`  |
 | Fig. `coalescence_benchmark`                              | `examples/figure_coalescence_benchmark.py`   |
-| Fig. `breakage_moment_validation`                         | `examples/figure_breakage_benchmark.py`      |
+| Figs. `breakage_moment_validation`, `breakage_grid_error` | `examples/figure_breakage_benchmark.py`      |
 | Fig. `growth_moment_validation`                           | `examples/figure_growth_benchmark.py`        |
 | Fig. + Table `benchmark_tradeoff`                         | `examples/figure_benchmark_tradeoff.py`      |
 | Table `category_comparison`                               | `examples/table_category_comparison.py`      |
