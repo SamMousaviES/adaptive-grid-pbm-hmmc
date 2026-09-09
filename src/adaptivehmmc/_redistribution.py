@@ -28,9 +28,12 @@ def solve_moment_weights(pivots: np.ndarray, target_moments: np.ndarray, moment_
     """
     pivots = np.asarray(pivots, dtype=float)
     target_moments = np.asarray(target_moments, dtype=float)
-    moment_orders = np.asarray(moment_orders)
-    matrix = pivots[None, :] ** moment_orders[:, None]
-    return np.linalg.solve(matrix, target_moments[: pivots.size])
+    moment_orders = np.asarray(moment_orders, dtype=float)
+    scale = max(float(np.max(np.abs(pivots))), np.finfo(float).tiny)
+    scaled_pivots = pivots / scale
+    scaled_moments = target_moments[: pivots.size] / scale**moment_orders
+    matrix = scaled_pivots[None, :] ** moment_orders[:, None]
+    return np.linalg.solve(matrix, scaled_moments)
 
 
 def redistribute_population(

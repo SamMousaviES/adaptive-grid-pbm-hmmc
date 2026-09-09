@@ -53,9 +53,11 @@ def build_coalescence_table(pivots: np.ndarray, moment_orders: np.ndarray) -> Co
     )
 
 
-def coalescence_rhs(_t: float, y: np.ndarray, table: CoalescenceTable, kernel_rate: float) -> np.ndarray:
-    """Right-hand side ``dY/dt`` for constant-kernel coalescence."""
+def coalescence_rhs(_t: float, y: np.ndarray, table: CoalescenceTable, kernel_rate) -> np.ndarray:
+    """Right-hand side for scalar or pairwise coalescence kernels."""
     y = np.asarray(y, dtype=float).ravel()
+    kernel_rate = np.asarray(kernel_rate, dtype=float)
+    scalar_kernel = kernel_rate.ndim == 0
     n = table.num_classes
     dydt = np.zeros(n)
 
@@ -63,7 +65,8 @@ def coalescence_rhs(_t: float, y: np.ndarray, table: CoalescenceTable, kernel_ra
         yi = y[i]
         for j in range(i, n):
             yj = y[j]
-            rate = kernel_rate * yi * yj
+            rate_coefficient = kernel_rate if scalar_kernel else kernel_rate[i, j]
+            rate = rate_coefficient * yi * yj
             event_rate = 0.5 * rate if i == j else rate
 
             first = table.first_index[i, j]

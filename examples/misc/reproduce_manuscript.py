@@ -14,16 +14,18 @@ from pathlib import Path
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-REPO_ROOT = SCRIPT_DIR.parent
+EXAMPLES_DIR = SCRIPT_DIR.parent
+REPO_ROOT = EXAMPLES_DIR.parent
 
 SCRIPTS = [
-    "figure_bad_grid_example.py",
-    "figure_redistribution_example.py",
-    "figure_coalescence_benchmark.py",
-    "table_category_comparison.py",
-    "figure_breakage_benchmark.py",
-    "figure_growth_benchmark.py",
-    "figure_benchmark_tradeoff.py",
+    EXAMPLES_DIR / "figure_bad_grid_example.py",
+    EXAMPLES_DIR / "figure_redistribution_example.py",
+    SCRIPT_DIR / "figure_coalescence_benchmark.py",
+    EXAMPLES_DIR / "table_category_comparison.py",
+    SCRIPT_DIR / "figure_breakage_benchmark.py",
+    EXAMPLES_DIR / "figure_growth_benchmark.py",
+    EXAMPLES_DIR / "figure_benchmark_tradeoff.py",
+    EXAMPLES_DIR / "table_fmax_sensitivity.py",
 ]
 
 
@@ -37,10 +39,10 @@ def main() -> None:
     )
 
     for script in SCRIPTS:
-        print(f"\n=== Running {script} ===", flush=True)
+        print(f"\n=== Running {script.name} ===", flush=True)
         subprocess.run(
-            [sys.executable, str(SCRIPT_DIR / script)],
-            cwd=SCRIPT_DIR,
+            [sys.executable, str(script)],
+            cwd=script.parent,
             env=env,
             check=True,
         )

@@ -48,7 +48,64 @@ def build_breakage_table(pivots: np.ndarray, moment_orders: np.ndarray) -> Break
     return BreakageTable(B=B, num_classes=n)
 
 
-def breakage_rhs(_t: float, y: np.ndarray, table: BreakageTable, rate: float) -> np.ndarray:
-    """Right-hand side ``dY/dt = rate * (B - I) @ Y`` for binary breakage."""
+def build_beta_breakage_table(pivots: np.ndarray, moment_orders: np.ndarray) -> BreakageTable:
+    """Build the CT beta-daughter redistribution table.
+
+    For a mother pivot ``d_j``, the daughter density is
+    ``180 d^2 / d_j^3 * (d^3 / d_j^3)^2 * (1 - d^3 / d_j^3)^2`` on
+    ``0 <= d <= d_j``. Each daughter interval is integrated analytically and
+    then distributed on a local moment-matching stencil. The resulting table
+    depends only on pivot ratios and is invariant under uniform scaling.
+    """
+    pivots = np.asarray(pivots, dtype=float)
+    moment_orders = np.asarray(moment_orders, dtype=float)
+    n = pivots.size
+    s = moment_orders.size
+    B = np.zeros((n, n))
+
+    for mother, mother_pivot in enumerate(pivots):
+        for daughter in range(mother + 1):
+            lower = 0.0 if daughter == 0 else 0.5 * (pivots[daughter - 1] + pivots[daughter])
+            upper = mother_pivot if daughter == mother else 0.5 * (pivots[daughter] + pivots[daughter + 1])
+            lower_ratio = lower / mother_pivot
+            upper_ratio = upper / mother_pivot
+            moments = 180.0 * mother_pivot**moment_orders * (
+                (upper_ratio ** (moment_orders + 9.0) - lower_ratio ** (moment_orders + 9.0))
+                / (moment_orders + 9.0)
+                - 2.0
+                * (upper_ratio ** (moment_orders + 12.0) - lower_ratio ** (moment_orders + 12.0))
+                / (moment_orders + 12.0)
+                + (upper_ratio ** (moment_orders + 15.0) - lower_ratio ** (moment_orders + 15.0))
+                / (moment_orders + 15.0)
+            )
+            first = local_stencil_start(pivots, pivots[daughter], s)
+            stencil = slice(first, first + s)
+            B[stencil, mother] += solve_moment_weights(
+                pivots[stencil], moments, moment_orders
+            )
+
+        volume = np.sum(B[:, mother] * pivots**3)
+        if volume != 0.0:
+            B[:, mother] *= pivots[mother] ** 3 / volume
+
+    return BreakageTable(B=B, num_classes=n)
+
+
+def build_alopaeus_beta_breakage_table(
+    pivots: np.ndarray, moment_orders: np.ndarray
+) -> BreakageTable:
+    """Build the binary beta-daughter table used by Alopaeus (2022).
+
+    The published density has coefficient 90 and integrates to one daughter.
+    Binary breakage contributes two daughters, so its HMMC birth moments are
+    twice the published density moments. This is algebraically identical to
+    the coefficient-180 table assembled by :func:`build_beta_breakage_table`.
+    """
+    return build_beta_breakage_table(pivots, moment_orders)
+
+
+def breakage_rhs(_t: float, y: np.ndarray, table: BreakageTable, rate) -> np.ndarray:
+    """Right-hand side for scalar or pivot-dependent binary-breakage rates."""
     y = np.asarray(y, dtype=float).ravel()
-    return rate * (table.B @ y - y)
+    weighted_population = np.asarray(rate, dtype=float) * y
+    return table.B @ weighted_population - weighted_population

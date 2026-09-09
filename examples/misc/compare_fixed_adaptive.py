@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+import sys
+
 import numpy as np
 import matplotlib.pyplot as plt
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import adaptivehmmc
 from _paths import output_dir

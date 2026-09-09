@@ -23,9 +23,9 @@ def coalescence_reference(time: float, initial_moments: np.ndarray, rate: float)
     return initial_moments * factor ** (1.0 - orders / 3.0)
 
 
-def write_table(path, header, rows):
+def write_table(path, header, rows, column_spec="lrrrr"):
     body = [
-        r"\begin{tabular}{lrrrr}",
+        rf"\begin{{tabular}}{{{column_spec}}}",
         r"\toprule",
         header + r" \\",
         r"\midrule",

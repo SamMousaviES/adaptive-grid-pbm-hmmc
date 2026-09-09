@@ -108,6 +108,21 @@ def test_breakage_matches_analytical_with_adaptation():
     assert result.report.num_adaptations >= 1
 
 
+def test_size_dependent_breakage_rate_conserves_third_moment():
+    from adaptivehmmc._breakage import breakage_rhs, build_beta_breakage_table
+
+    pivots = np.geomspace(1.0, 100.0, 21)
+    population = np.exp(-0.5 * (np.log(pivots / 20.0) / 0.5) ** 2)
+    rate = 0.1 + pivots / pivots[-1]
+    table = build_beta_breakage_table(pivots, np.arange(6))
+
+    rhs = breakage_rhs(0.0, population, table, rate)
+
+    third_moment_rate = np.dot(pivots**3, rhs)
+    third_moment_turnover = np.dot(pivots**3, rate * population)
+    assert abs(third_moment_rate) <= 1.0e-12 * third_moment_turnover
+
+
 def test_growth_matches_analytical_with_adaptation():
     from examples_helpers import geometric_grid, lognormal_normalized
 
