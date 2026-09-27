@@ -52,7 +52,7 @@ from figure_breakage_benchmark_three_panel import (  # noqa: E402
 
 def alopaeus_initial_state(num_classes, diameter_min, diameter_max, parameters):
     """Return the existing log-normal initial condition at the specified holdup."""
-    pivots, widths = geometric_grid(num_classes, diameter_min, diameter_max, 1.30)
+    pivots, widths = geometric_grid(num_classes, diameter_min, diameter_max, 1.20)
     center = 10.0e-6
     sigma = 0.20
     raw = np.exp(-0.5 * (np.log(pivots / center) / sigma) ** 2) / pivots
@@ -67,7 +67,7 @@ def alopaeus_options(pivots, population, final_time, adaptive):
     options.num_classes = pivots.size
     options.num_moments = 6
     options.adaptive = adaptive
-    options.f_max = 4
+    options.f_max = 2.4
     options.f_mult = 1.3
     options.initial_distribution.type = "custom"
     options.initial_distribution.pivots = pivots

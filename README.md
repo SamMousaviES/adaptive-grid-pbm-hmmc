@@ -80,11 +80,11 @@ options.solver.num_steps = 500
 ```
 
 For breakage the manuscript uses a log-normal initial population on a custom
-geometric grid; `examples/figure_breakage_benchmark.py` shows how to pass this
-through `options.initial_distribution`. The McCabe delta-L growth benchmark in
-`examples/figure_growth_benchmark.py` is implemented as a standalone
-manuscript example because this translated-characteristic case is not part of
-the public `adaptivehmmc.solve` API.
+geometric grid; `examples/figure_breakage_benchmark_three_panel.py` shows how
+to pass this through `options.initial_distribution`. The McCabe delta-L growth
+benchmark in `examples/figure_growth_benchmark.py` is implemented as a
+standalone manuscript example because this translated-characteristic case is
+not part of the public `adaptivehmmc.solve` API.
 
 ## Method overview
 
@@ -106,19 +106,23 @@ adaptation events.
 
 ## Reproducing the manuscript figures and tables
 
-Each manuscript artifact has a dedicated example script in `examples/`.
-Outputs are written to `figures_out/` (PDFs and PNGs) and
-`figures_out/tables/` (LaTeX tables).
+Each generated numerical manuscript artifact has a dedicated example script
+in `examples/`. Outputs are written to `figures_out/` (PDFs and PNGs) and
+`figures_out/tables/` (LaTeX tables). Static descriptive and parameter tables
+remain in the manuscript source.
 
-| Manuscript artifact                                       | Script                                       |
-|-----------------------------------------------------------|----------------------------------------------|
-| Fig. `bad_grid_example`                                   | `examples/figure_bad_grid_example.py`        |
-| Fig. `redistribution_example`                             | `examples/figure_redistribution_example.py`  |
-| Fig. `coalescence_benchmark`                              | `examples/figure_coalescence_benchmark.py`   |
-| Figs. `breakage_moment_validation`, `breakage_grid_error` | `examples/figure_breakage_benchmark.py`      |
-| Fig. `growth_moment_validation`                           | `examples/figure_growth_benchmark.py`        |
-| Fig. + Table `benchmark_tradeoff`                         | `examples/figure_benchmark_tradeoff.py`      |
-| Table `category_comparison`                               | `examples/table_category_comparison.py`      |
+| Manuscript artifact | Script |
+|---|---|
+| Fig. `bad_grid_example` | `examples/figure_bad_grid_example.py` |
+| Fig. `redistribution_example` | `examples/figure_redistribution_example.py` |
+| Figs. `psd_superiority_{coalescence,breakage,growth}_three_panel_validation` | `examples/figure_breakage_benchmark_three_panel.py` |
+| Figs. `nucleation_three_panel_validation`, `nucleation_growth_three_panel_validation` | `examples/figure_nucleation_benchmark_three_panel.py` |
+| Figs. `coupled_coalescence_{breakage,growth}_three_panel_validation` | `examples/figure_coupled_benchmark_three_panel.py` |
+| Fig. `alopaeus_coalescence_breakage_three_panel_validation` | `examples/figure_alopaeus_coalescence_breakage_three_panel.py` |
+| Fig. + Table `benchmark_tradeoff` | `examples/figure_benchmark_tradeoff.py` |
+| Table `category_comparison` | `examples/table_category_comparison.py` |
+| Table `fmax_sensitivity` | `examples/table_fmax_sensitivity.py` |
+| Table `analytical_benchmark_cdf_error` | `examples/table_analytical_benchmark_cdf_error.py` |
 
 To regenerate every manuscript artifact:
 
@@ -130,6 +134,10 @@ The runner adds the local `src/` directory to `PYTHONPATH`, so it works from a
 fresh checkout before installation. Individual example scripts can also be run
 directly after `pip install -e .[dev]`. The small helper `_paths.py` simply
 locates the `figures_out/` output directory.
+
+Additional validation and exploratory scripts are retained under
+`examples/misc/`. The Coulaloglou--Tavlarides physical-kernel comparison is
+available as `examples/figure_ct_coalescence_breakage_three_panel.py`.
 
 ## Tests
 

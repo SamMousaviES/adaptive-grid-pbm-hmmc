@@ -16,7 +16,7 @@ import numpy as np
 from scipy.integrate import solve_ivp
 
 
-REPO = Path(__file__).resolve().parents[1]
+REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "src"))
 sys.path.insert(0, str(REPO / "examples"))
 

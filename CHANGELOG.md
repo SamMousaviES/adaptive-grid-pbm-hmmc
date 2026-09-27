@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Added all current manuscript validation figures to the reproduction runner.
+- Added a generator for the seven-case final volume-CDF error table.
+- Corrected local-source paths so examples run reliably from a fresh checkout.
+- Updated the README artifact-to-script index to match the accepted manuscript.
+
 ## 0.2.0
 
 - Rewritten as a pip-installable Python package built on NumPy and SciPy.

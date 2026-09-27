@@ -14,7 +14,8 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+REPO = Path(__file__).resolve().parents[2]
+sys.path[:0] = [str(REPO / "src"), str(REPO / "examples")]
 
 import adaptivehmmc
 from _paths import output_dir

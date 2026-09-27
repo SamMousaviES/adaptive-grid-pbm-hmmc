@@ -40,7 +40,7 @@ from numpy.polynomial.legendre import leggauss
 from scipy.optimize import brentq
 
 matplotlib.use("Agg")
-REPO = Path(__file__).resolve().parents[2]
+REPO = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(REPO / "src"), str(REPO / "examples")]
 
 from adaptivehmmc._redistribution import local_stencil_start  # noqa: E402

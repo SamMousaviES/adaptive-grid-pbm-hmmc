@@ -228,11 +228,11 @@ def max_relative_error(values, reference):
 def coalescence_case():
     num_classes = 21
     num_moments = 6
-    grid_ratio = 1.1
+    grid_ratio = 1.0
     diameter_min = 1e-3
     diameter_max = 1.0
     simulation_time = 10.0
-    rate = 100.0
+    rate = 150.0
     f_max = 2.5
     f_mult = 1.3
     lognorm_center = 0.31
