@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite it using the metadata below."
+message: "If you use this software, its examples, or results produced with it, please cite the accompanying publication below."
 title: "Adaptive HMMC for PBMs"
 version: "0.2.0"
 date-released: "2026-05-16"
@@ -12,6 +12,8 @@ authors:
     orcid: "https://orcid.org/0000-0001-9773-0998"
 abstract: "Python implementation of an adaptive-grid moment-conserving HMMC solver for population balance equations with coalescence, breakage, and proportional growth."
 license: "MIT"
+repository-code: "https://github.com/SamMousaviES/adaptive-grid-pbm-hmmc"
+url: "https://github.com/SamMousaviES/adaptive-grid-pbm-hmmc"
 keywords:
   - population balance
   - adaptive grid
@@ -19,3 +21,17 @@ keywords:
   - coalescence
   - breakage
   - growth
+preferred-citation:
+  type: article
+  title: "An Adaptive-Grid Strategy for HMMC Population Balance Equations"
+  authors:
+    - family-names: "Alopaeus"
+      given-names: "Ville"
+      orcid: "https://orcid.org/0000-0001-9773-0998"
+    - family-names: "Mousavi"
+      given-names: "Mahdi"
+      orcid: "https://orcid.org/0000-0002-1171-6034"
+  journal: "Chemical Engineering Science"
+  year: 2026
+  doi: "10.1016/j.ces.2026.125217"
+  url: "https://doi.org/10.1016/j.ces.2026.125217"

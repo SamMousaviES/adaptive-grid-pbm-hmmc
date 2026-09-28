@@ -152,8 +152,29 @@ the breakage and growth benchmarks.
 
 ## Citation
 
-If you use this package in academic work, please cite the accompanying
-publication or use the metadata in `CITATION.cff`.
+If you use this software, its examples, or results produced with it, please
+cite the accompanying publication:
+
+> Ville Alopaeus and Mahdi Mousavi (2026). "An Adaptive-Grid Strategy for
+> HMMC Population Balance Equations." *Chemical Engineering Science*, article
+> 125217. <https://doi.org/10.1016/j.ces.2026.125217>
+
+BibTeX:
+
+```bibtex
+@article{Alopaeus2026AdaptiveGrid,
+  author  = {Alopaeus, Ville and Mousavi, Mahdi},
+  title   = {An Adaptive-Grid Strategy for {HMMC} Population Balance Equations},
+  journal = {Chemical Engineering Science},
+  year    = {2026},
+  pages   = {125217},
+  doi     = {10.1016/j.ces.2026.125217},
+  url     = {https://doi.org/10.1016/j.ces.2026.125217}
+}
+```
+
+GitHub's **Cite this repository** function uses the matching metadata in
+`CITATION.cff`.
 
 ## License
 
